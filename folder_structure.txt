@@ -1,0 +1,57 @@
+assetforge/                     # project root (git repo)
+├── .gitignore
+├── README.md
+├── pyproject.toml               # (optional) minimal poetry/pip build metadata
+├── run.sh                       # launcher script (activates .venv, runs main)
+├── data/
+│   ├── inventory.db             # created at first run
+│   └── migrations/
+│       └── 0001_init.sql
+├── exports/                     # xlsx exports and GitHub backups
+├── icons/                       # .desktop icon(s)
+├── scripts/                     # helper scripts
+│   ├── backup.sh                # git add/commit/push data + exports
+│   └── verify_db.py             # quick integrity check / vacuum
+├── src/
+│   ├── __init__.py
+│   ├── main.py                  # entrypoint, constructs app + MainWindow
+│   ├── logging_setup.py
+│   ├── repositories/
+│   │   ├── __init__.py
+│   │   ├── db.py                # SQLite wrapper & migration runner
+│   │   ├── sqlite_items_repo.py
+│   │   ├── sqlite_types_repo.py
+│   │   ├── sqlite_attributes_repo.py
+│   │   └── sqlite_updates_repo.py
+│   ├── viewmodels/
+│   │   ├── __init__.py
+│   │   ├── items_viewmodel.py
+│   │   └── filters_viewmodel.py
+│   ├── ui/
+│   │   ├── __init__.py
+│   │   ├── main_window.py
+│   │   ├── dialogs/
+│   │   │   ├── item_editor_dialog.py
+│   │   │   ├── assign_user_dialog.py
+│   │   │   └── move_location_dialog.py
+│   │   ├── panels/
+│   │   │   ├── items_table.py
+│   │   │   ├── filters_panel.py
+│   │   │   ├── attributes_panel.py
+│   │   │   └── history_panel.py
+│   │   └── utils/
+│   │       └── barcode_input.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── audit_service.py
+│   │   ├── export_xlsx.py
+│   │   └── search_service.py
+│   └── utils/
+│       ├── paths.py
+│       └── timestamp.py
+└── tests/
+    ├── __init__.py
+    ├── test_db.py
+    ├── test_repo_items.py
+    └── test_asset_tag_generation.py
+

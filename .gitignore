@@ -1,0 +1,53 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Logs
+~/.local/state/assetforge/logs/
+logs/
+*.log
+
+# SQLite database files and WAL
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Exported spreadsheets and backups
+exports/*.xlsx
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# PyInstaller cache
+__pyinstaller_cache__/
+*.manifest
+*.spec
+
+# Tests / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Misc
+*.bak
+*.tmp
+*.old
+
