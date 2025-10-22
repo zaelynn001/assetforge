@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """SQLite repository for hardware types."""
 from __future__ import annotations
@@ -40,6 +40,15 @@ class SQLiteTypesRepository:
         conn = self._conn()
         cur = conn.execute(
             "SELECT id, name, code FROM hardware_types WHERE code = ?", (code,)
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+    def find_by_name(self, name: str) -> Optional[Dict[str, str]]:
+        conn = self._conn()
+        cur = conn.execute(
+            "SELECT id, name, code FROM hardware_types WHERE lower(name) = lower(?)",
+            (name,),
         )
         row = cur.fetchone()
         return dict(row) if row else None

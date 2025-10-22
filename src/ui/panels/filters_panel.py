@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Filters sidebar with combo boxes for quick narrowing."""
 from __future__ import annotations
@@ -48,12 +48,25 @@ class FiltersPanel(QWidget):
         layout.addStretch(1)
         layout.addWidget(clear_btn)
 
+        self._last_options: Dict[str, list] = {
+            "types": [],
+            "locations": [],
+            "users": [],
+            "groups": [],
+        }
+
     # ------------------------------------------------------------------
     def populate(self, *, types, locations, users, groups) -> None:
-        self._populate_combo(self._type_combo, types)
-        self._populate_combo(self._location_combo, locations)
-        self._populate_combo(self._user_combo, users)
-        self._populate_combo(self._group_combo, groups)
+        self._last_options = {
+            "types": list(types),
+            "locations": list(locations),
+            "users": list(users),
+            "groups": list(groups),
+        }
+        self._populate_combo(self._type_combo, self._last_options["types"])
+        self._populate_combo(self._location_combo, self._last_options["locations"])
+        self._populate_combo(self._user_combo, self._last_options["users"])
+        self._populate_combo(self._group_combo, self._last_options["groups"])
 
     def _populate_combo(self, combo: QComboBox, rows: Iterable[dict]) -> None:
         combo.blockSignals(True)
@@ -87,3 +100,33 @@ class FiltersPanel(QWidget):
         ):
             combo.setCurrentIndex(0)
         self.clearRequested.emit()
+
+    # utilities --------------------------------------------------------
+    def set_selected_filters(
+        self,
+        *,
+        type_id: Optional[int] = None,
+        location_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        group_id: Optional[int] = None,
+        emit: bool = False,
+    ) -> None:
+        mapping = {
+            self._type_combo: type_id,
+            self._location_combo: location_id,
+            self._user_combo: user_id,
+            self._group_combo: group_id,
+        }
+        for combo, value in mapping.items():
+            combo.blockSignals(True)
+            if value is None:
+                combo.setCurrentIndex(0)
+            else:
+                idx = combo.findData(value)
+                if idx >= 0:
+                    combo.setCurrentIndex(idx)
+                else:
+                    combo.setCurrentIndex(0)
+            combo.blockSignals(False)
+        if emit:
+            self.filtersChanged.emit(self.selected_filters())

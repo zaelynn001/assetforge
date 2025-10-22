@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Quick integrity check for the AssetForge SQLite database."""
 from pathlib import Path

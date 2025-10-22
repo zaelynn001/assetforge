@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """SQLite repository for managing locations."""
 from __future__ import annotations
@@ -30,6 +30,21 @@ class SQLiteLocationsRepository:
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+    def find_by_name(self, name: str) -> Optional[Dict[str, str]]:
+        cur = self._conn().execute(
+            "SELECT id, name, parent_id FROM locations WHERE lower(name) = lower(?)",
+            (name,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+    def ensure(self, name: str) -> Dict[str, str]:
+        existing = self.find_by_name(name)
+        if existing:
+            return existing
+        new_id = self.create(name=name)
+        return {"id": new_id, "name": name, "parent_id": None}
 
     def create(self, *, name: str, parent_id: Optional[int] = None) -> int:
         conn = self._conn()

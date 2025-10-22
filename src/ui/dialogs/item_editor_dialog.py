@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Modal dialog for creating or editing an inventory item."""
 from __future__ import annotations
@@ -74,6 +74,7 @@ class ItemEditorDialog(QDialog):
 
         if item:
             self._apply_item(item)
+        self._apply_relative_size()
 
     # ------------------------------------------------------------------
     def _populate_combo(self, combo: QComboBox, rows: Iterable[dict], *, required: bool = False) -> None:
@@ -128,3 +129,13 @@ class ItemEditorDialog(QDialog):
             "group_id": data(self._group_combo),
             "notes": notes_text or None,
         }
+
+    def _apply_relative_size(self) -> None:
+        parent = self.parentWidget()
+        window = parent.window() if parent else None
+        if window is None:
+            from PySide6.QtWidgets import QApplication
+            window = QApplication.activeWindow()
+        if window is None:
+            return
+        self.resize(int(window.width() * 0.5), int(window.height() * 0.6))

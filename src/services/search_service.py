@@ -1,10 +1,23 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
-"""Placeholder search service."""
+"""Search parsing helpers for advanced query tokens."""
 from __future__ import annotations
-from typing import Iterable, Dict, List
+
+from typing import Dict, Tuple
 
 
-def search(rows: Iterable[Dict[str, str]], term: str) -> List[Dict[str, str]]:
-    term_lower = term.lower()
-    return [row for row in rows if term_lower in " ".join(row.values()).lower()]
+def parse_query(query: str) -> Tuple[str, Dict[str, str]]:
+    """Split a free-form query into plain text and directive filters."""
+    filters: Dict[str, str] = {}
+    terms = []
+    for token in query.split():
+        if ":" in token:
+            key, value = token.split(":", 1)
+            key = key.lower().strip()
+            value = value.strip()
+            if key and value:
+                if key in {"type", "mac", "mac_address", "loc", "location", "tag", "asset", "asset_tag", "user", "group"}:
+                    filters[key] = value
+                    continue
+        terms.append(token)
+    return " ".join(terms).strip(), filters

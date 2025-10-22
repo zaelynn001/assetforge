@@ -1,15 +1,161 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
-"""Placeholder export service."""
+"""Minimal XLSX export helpers for AssetForge."""
 from __future__ import annotations
+
+import datetime as _dt
 from pathlib import Path
-from typing import Iterable, Dict
+from typing import Dict, Iterable, List
+from zipfile import ZipFile, ZIP_DEFLATED
 
 
-def export_to_xlsx(rows: Iterable[Dict[str, str]], target: Path) -> None:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with target.open("w", encoding="utf-8") as fh:
-        fh.write("assetforge export placeholder\n")
-        for row in rows:
-            fh.write(",".join(f"{k}={v}" for k, v in row.items()))
-            fh.write("\n")
+INVENTORY_COLUMNS = [
+    ("Asset Tag", "asset_tag"),
+    ("Name", "name"),
+    ("Model", "model"),
+    ("Type", "type_name"),
+    ("Location", "location_name"),
+    ("User", "user_name"),
+    ("Group", "group_name"),
+    ("MAC Address", "mac_address"),
+    ("Notes", "notes"),
+    ("Updated", "updated_at_utc"),
+]
+
+
+def export_inventory(workbook_path: Path, *, items: List[Dict[str, str]], attributes_map: Dict[int, List[Dict[str, str]]]) -> None:
+    """Write an XLSX workbook with inventory and attribute sheets."""
+    workbook_path.parent.mkdir(parents=True, exist_ok=True)
+    rows_inventory = _build_inventory_rows(items)
+    rows_attributes = _build_attribute_rows(attributes_map)
+    with ZipFile(workbook_path, "w", ZIP_DEFLATED) as zf:
+        _write_core_parts(zf)
+        _write_inventory_sheet(zf, rows_inventory)
+        _write_attributes_sheet(zf, rows_attributes)
+
+
+def _build_inventory_rows(items: Iterable[Dict[str, str]]) -> List[List[str]]:
+    rows = [[header for header, _ in INVENTORY_COLUMNS]]
+    for item in items:
+        row = []
+        for _title, key in INVENTORY_COLUMNS:
+            value = item.get(key)
+            row.append(_format_value(value))
+        rows.append(row)
+    return rows
+
+
+def _build_attribute_rows(attributes_map: Dict[int, List[Dict[str, str]]]) -> List[List[str]]:
+    rows = [["Item ID", "Attribute", "Value", "Updated"]]
+    for item_id, attrs in attributes_map.items():
+        for attr in attrs:
+            rows.append([
+                str(item_id),
+                attr.get("attr_key", ""),
+                _format_value(attr.get("attr_value")),
+                _format_value(attr.get("updated_at_utc")),
+            ])
+    return rows
+
+
+def _write_core_parts(zf: ZipFile) -> None:
+    zf.writestr("[Content_Types].xml", _CONTENT_TYPES)
+    zf.writestr("_rels/.rels", _RELS)
+    zf.writestr("xl/workbook.xml", _WORKBOOK)
+    zf.writestr("xl/_rels/workbook.xml.rels", _WORKBOOK_RELS)
+    zf.writestr("xl/styles.xml", _STYLES)
+
+
+def _write_inventory_sheet(zf: ZipFile, rows: List[List[str]]) -> None:
+    zf.writestr("xl/worksheets/sheet1.xml", _build_sheet_xml(rows))
+
+
+def _write_attributes_sheet(zf: ZipFile, rows: List[List[str]]) -> None:
+    zf.writestr("xl/worksheets/sheet2.xml", _build_sheet_xml(rows))
+
+
+def _build_sheet_xml(rows: List[List[str]]) -> str:
+    xml_rows = []
+    for r_idx, row in enumerate(rows, start=1):
+        cells = []
+        for c_idx, value in enumerate(row):
+            cell_ref = _column_letter(c_idx + 1) + str(r_idx)
+            if value == "":
+                cells.append(f'<c r="{cell_ref}" />')
+            else:
+                cells.append(
+                    f'<c r="{cell_ref}" t="inlineStr"><is><t>{_escape(value)}</t></is></c>'
+                )
+        xml_rows.append(f"<row r=\"{r_idx}\">{''.join(cells)}</row>")
+    sheet_data = "".join(xml_rows)
+    return _SHEET_TEMPLATE.format(sheet_data=sheet_data)
+
+
+def _column_letter(index: int) -> str:
+    letters = []
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        letters.append(chr(65 + remainder))
+    return "".join(reversed(letters))
+
+
+def _escape(value: str) -> str:
+    return (
+        value.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+    )
+
+
+def _format_value(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, _dt.datetime):
+        return value.isoformat()
+    return str(value)
+
+
+_CONTENT_TYPES = """<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    <Default Extension="xml" ContentType="application/xml"/>
+    <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+    <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+    <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+    <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>"""
+
+_RELS = """<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>"""
+
+_WORKBOOK = """<?xml version="1.0" encoding="UTF-8"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <sheets>
+        <sheet name="Inventory" sheetId="1" r:id="rId1"/>
+        <sheet name="Attributes" sheetId="2" r:id="rId2"/>
+    </sheets>
+</workbook>"""
+
+_WORKBOOK_RELS = """<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+    <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+    <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>"""
+
+_STYLES = """<?xml version="1.0" encoding="UTF-8"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+    <fonts count="1"><font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/></font></fonts>
+    <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+    <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+    <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+    <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment wrapText="1"/></xf></cellXfs>
+</styleSheet>"""
+
+_SHEET_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <sheetData>{sheet_data}</sheetData>
+</worksheet>"""

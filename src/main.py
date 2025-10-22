@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Entry point for the AssetForge desktop application."""
 from __future__ import annotations
@@ -30,7 +30,6 @@ def main() -> int:
         app = QApplication(sys.argv)
         QCoreApplication.setOrganizationName("assetforge")
         QCoreApplication.setApplicationName("AssetForge")
-        app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
 
         window = MainWindow(database=db)
         window.show()

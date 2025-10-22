@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """SQLite repository for managing users."""
 from __future__ import annotations
@@ -30,6 +30,21 @@ class SQLiteUsersRepository:
         )
         row = cur.fetchone()
         return dict(row) if row else None
+
+    def find_by_name(self, name: str) -> Optional[Dict[str, str]]:
+        cur = self._conn().execute(
+            "SELECT id, name, email FROM users WHERE lower(name) = lower(?)",
+            (name,),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+    def ensure(self, name: str, email: Optional[str] = None) -> Dict[str, str]:
+        existing = self.find_by_name(name)
+        if existing:
+            return existing
+        new_id = self.create(name=name, email=email)
+        return {"id": new_id, "name": name, "email": email}
 
     def create(self, *, name: str, email: Optional[str] = None) -> int:
         conn = self._conn()

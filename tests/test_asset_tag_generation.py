@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Placeholder asset tag generation test."""
 from src.utils.timestamp import now_iso

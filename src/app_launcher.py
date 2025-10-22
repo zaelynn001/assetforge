@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Thin launcher wrapper so `python -m src.app_launcher` works."""
 from __future__ import annotations

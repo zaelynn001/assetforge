@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Database smoke tests covering migrations and triggers."""
 from __future__ import annotations
@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.repositories.db import Database
+from src.repositories.sqlite_items_repo import SQLiteItemsRepository
 from src.utils.paths import MIGRATIONS_DIR
 
 
@@ -23,7 +24,8 @@ def test_run_migrations_seeds_reference_data(tmp_path: Path) -> None:
             row["code"]
             for row in db.conn.execute("SELECT code FROM hardware_types ORDER BY code")
         ]
-        assert {"AP", "DT", "LT", "SW"}.issubset(set(codes))
+        expected = {"PC", "NX", "TP", "PX", "CC", "LX", "EX", "PD", "AP", "MX"}
+        assert expected.issubset(set(codes))
 
         # Second run should be idempotent
         assert db.run_migrations(MIGRATIONS_DIR) == []
@@ -36,23 +38,19 @@ def test_asset_tag_trigger_generates_expected_value(tmp_path: Path) -> None:
     try:
         db.run_migrations(MIGRATIONS_DIR)
 
-        type_id = db.conn.execute(
-            "SELECT id FROM hardware_types WHERE code = ?", ("LT",)
+        items_repo = SQLiteItemsRepository(db)
+        laptop_type = db.conn.execute(
+            "SELECT id FROM hardware_types WHERE code = ?", ("PC",)
         ).fetchone()["id"]
 
-        db.conn.execute(
-            """
-            INSERT INTO hardware_items(name, model, type_id, mac_address, asset_tag)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            ("M1 Laptop", "ThinkPad X1", type_id, None, "SDMM-LT-0000"),
+        item = items_repo.create(
+            name="M1 Laptop",
+            model="ThinkPad X1",
+            type_id=laptop_type,
         )
 
-        row = db.conn.execute(
-            "SELECT id, asset_tag FROM hardware_items LIMIT 1"
-        ).fetchone()
-
-        assert row["id"] == 1
-        assert row["asset_tag"] == "SDMM-LT-0001"
+        assert item["id"] == 1
+        assert item["master_id"] is not None
+        assert item["asset_tag"] == "SDMM-PC-0001"
     finally:
         db.close()

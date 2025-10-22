@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type = Application
+Name = AssetForge
+Exec = python3 -m src.main
+Icon = icons/assetforge.png
+

@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """SQLite repository for item attribute key/value pairs."""
 from __future__ import annotations

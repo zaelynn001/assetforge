@@ -1,3 +1,3 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Service layer for AssetForge."""

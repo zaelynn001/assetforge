@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Dialog for assigning a user and/or group to an item."""
 from __future__ import annotations
@@ -59,6 +59,7 @@ class AssignUserDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        self._apply_relative_size()
 
     def _populate_combo(self, combo: QComboBox, rows: Iterable[dict]) -> None:
         combo.clear()
@@ -77,3 +78,13 @@ class AssignUserDialog(QDialog):
             "group_id": data(self._group_combo),
             "note": note_text or None,
         }
+
+    def _apply_relative_size(self) -> None:
+        parent = self.parentWidget()
+        window = parent.window() if parent else None
+        if window is None:
+            from PySide6.QtWidgets import QApplication
+            window = QApplication.activeWindow()
+        if window is None:
+            return
+        self.resize(int(window.width() * 0.5), int(window.height() * 0.6))

@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Dialog for selecting a new location for an item."""
 from __future__ import annotations
@@ -49,6 +49,7 @@ class MoveLocationDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        self._apply_relative_size()
 
     def _populate_combo(self, locations: Iterable[dict]) -> None:
         self._location_combo.clear()
@@ -63,3 +64,13 @@ class MoveLocationDialog(QDialog):
             "location_id": int(value) if value is not None else None,
             "note": note_text or None,
         }
+
+    def _apply_relative_size(self) -> None:
+        parent = self.parentWidget()
+        window = parent.window() if parent else None
+        if window is None:
+            from PySide6.QtWidgets import QApplication
+            window = QApplication.activeWindow()
+        if window is None:
+            return
+        self.resize(int(window.width() * 0.5), int(window.height() * 0.6))

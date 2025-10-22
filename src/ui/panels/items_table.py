@@ -1,4 +1,4 @@
-# Rev 0.1.0
+# Rev 1.0.0
 
 """Items table widget showing inventory rows."""
 from __future__ import annotations
@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 class ItemsTable(QTableWidget):
     itemSelected = Signal(int)
     itemActivated = Signal(int)
+    contextMenuRequested = Signal(object, object)  # item_id (or None), global QPoint
 
     _COLUMNS = (
         ("Asset Tag", "asset_tag"),
@@ -19,9 +20,6 @@ class ItemsTable(QTableWidget):
         ("Model", "model"),
         ("Type", "type_name"),
         ("MAC", "mac_address"),
-        ("Location", "location_name"),
-        ("User/Group", "assignment"),
-        ("Updated", "updated_at_utc"),
     )
 
     def __init__(self, parent=None) -> None:
@@ -33,10 +31,15 @@ class ItemsTable(QTableWidget):
         self.verticalHeader().setVisible(False)
         self.verticalHeader().setDefaultSectionSize(26)
 
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._on_context_menu)
+
         header: QHeaderView = self.horizontalHeader()
         header.setStretchLastSection(True)
+        resize_columns = {0, 2, 4}
         for idx, _ in enumerate(self._COLUMNS):
-            header.setSectionResizeMode(idx, QHeaderView.ResizeToContents if idx in (0, 2, 3, 4, 7) else QHeaderView.Stretch)
+            mode = QHeaderView.ResizeToContents if idx in resize_columns else QHeaderView.Stretch
+            header.setSectionResizeMode(idx, mode)
 
         self.itemSelectionChanged.connect(self._emit_selection)
         self.itemDoubleClicked.connect(self._activate)
@@ -48,9 +51,7 @@ class ItemsTable(QTableWidget):
         self._rows = list(rows)
         self.setRowCount(len(self._rows))
         for r, row in enumerate(self._rows):
-            assignment = row.get("user_name") or row.get("group_name") or ""
             display_row = dict(row)
-            display_row["assignment"] = assignment
             for c, (_, key) in enumerate(self._COLUMNS):
                 value = display_row.get(key) or ""
                 item = QTableWidgetItem(str(value))
@@ -93,3 +94,14 @@ class ItemsTable(QTableWidget):
         item_id = item.data(Qt.UserRole)
         if item_id is not None:
             self.itemActivated.emit(int(item_id))
+
+    def _on_context_menu(self, pos) -> None:
+        item = self.itemAt(pos)
+        item_id = None
+        if item is not None:
+            item_id = item.data(Qt.UserRole)
+            if item_id is not None:
+                self.selectRow(item.row())
+        else:
+            self.clearSelection()
+        self.contextMenuRequested.emit(item_id, self.mapToGlobal(pos))
