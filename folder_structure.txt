@@ -21,7 +21,6 @@ assetforge/                     # project root (git repo)
 │   │   ├── db.py                # SQLite wrapper & migration runner
 │   │   ├── sqlite_items_repo.py
 │   │   ├── sqlite_types_repo.py
-│   │   ├── sqlite_attributes_repo.py
 │   │   └── sqlite_updates_repo.py
 │   ├── viewmodels/
 │   │   ├── __init__.py
@@ -37,7 +36,6 @@ assetforge/                     # project root (git repo)
 │   │   ├── panels/
 │   │   │   ├── items_table.py
 │   │   │   ├── filters_panel.py
-│   │   │   ├── attributes_panel.py
 │   │   │   └── history_panel.py
 │   │   └── utils/
 │   │       └── barcode_input.py
@@ -54,4 +52,3 @@ assetforge/                     # project root (git repo)
     ├── test_db.py
     ├── test_repo_items.py
     └── test_asset_tag_generation.py
-

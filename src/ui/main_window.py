@@ -730,11 +730,7 @@ class MainWindow(QMainWindow):
         path = Path(path_str)
         try:
             items = self._items_repo.list_items(order_by="hi.asset_tag")
-            attributes_map = {
-                item["id"]: self._items_repo.attributes_for_item(item["id"])
-                for item in items
-            }
-            export_inventory(path, items=items, attributes_map=attributes_map)
+            export_inventory(path, items=items)
         except Exception as exc:
             QMessageBox.critical(self, "Export failed", str(exc))
             return

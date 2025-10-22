@@ -12,9 +12,8 @@ M1 — Bootstrap & Plumbing (Rev 0.0.1)
 
 M2 — Core Domain & Repositories (Rev 0.2.0)
 -------------------------------------------
-- Implement repositories for hardware_items, types, locations, users, groups, attributes, and updates.
+- Implement repositories for hardware_items, types, locations, users, groups, and updates.
 - Add CRUD operations with validation and updated_at_utc management.
-- Add attribute key/value helpers.
 - Implement audit recording for changes.
 
 M3 — UI Shell & Grid (Rev 0.4.0)
@@ -25,12 +24,10 @@ M3 — UI Shell & Grid (Rev 0.4.0)
 - Implement New Item dialog and Edit modal.
 - Add search bar and scanner-friendly focus handling.
 
-M4 — Assignment, Movement, Attributes (Rev 0.6.0)
--------------------------------------------------
+M4 — Assignment & Movement (Rev 0.6.0)
+--------------------------------------
 - Add Assign User/Group and Move Location dialogs.
-- Build Attributes tab with editable key/value pairs.
-- Implement attribute validation and duplicate prevention.
-- Enable bulk attribute import from CSV.
+- Implement audit note entry options for manual updates.
 
 M5 — History & Audit UX (Rev 0.7.0)
 -----------------------------------
@@ -46,7 +43,7 @@ M6 — Barcode/Asset-Tag Flow & Search (Rev 0.8.0)
 
 M7 — Export & Backup (Rev 0.9.0)
 --------------------------------
-- Add .xlsx export (openpyxl): grid and attributes sheets.
+- Add .xlsx export (openpyxl): grid sheet.
 - Implement Backup script using git commit/push.
 - Integrate “Backup Now” action into menu.
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 
 class InventoryImportError(Exception):
@@ -33,7 +33,7 @@ def import_inventory_csv(
     groups_repo,
     items_repo,
 ) -> Tuple[int, List[str]]:
-    """Import inventory rows from CSV, creating items and attributes."""
+    """Import inventory rows from CSV, creating items."""
     rows = load_csv_rows(path)
     if not rows:
         return 0, []
@@ -75,8 +75,6 @@ def import_inventory_csv(
             if group_name:
                 group_id = groups_repo.ensure(group_name)["id"]
 
-            attributes = _extract_attributes(row)
-
             item = items_repo.create(
                 name=name,
                 type_id=type_id,
@@ -86,7 +84,6 @@ def import_inventory_csv(
                 user_id=user_id,
                 group_id=group_id,
                 notes=note_text,
-                attributes=attributes,
                 note="imported via CSV",
             )
 
@@ -111,27 +108,3 @@ def _build_type_lookup(types: Iterable[Dict[str, str]]) -> Dict[str, int]:
         if code:
             lookup[code] = tid
     return lookup
-
-
-def _extract_attributes(row: Dict[str, str]) -> Dict[str, Optional[str]]:
-    attrs: Dict[str, Optional[str]] = {}
-    for key, value in row.items():
-        if key.startswith("attr:"):
-            attr_key = key.split(":", 1)[1]
-            if attr_key:
-                attrs[attr_key] = value or None
-        elif key.startswith("attribute_"):
-            attr_key = key.split("_", 1)[1]
-            if attr_key:
-                attrs[attr_key] = value or None
-    attr_field = row.get("attributes")
-    if attr_field:
-        for pair in attr_field.split(";"):
-            if not pair.strip():
-                continue
-            if "=" in pair:
-                k, v = pair.split("=", 1)
-                attrs[k.strip()] = v.strip() or None
-            else:
-                attrs[pair.strip()] = None
-    return attrs

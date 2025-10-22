@@ -23,15 +23,13 @@ INVENTORY_COLUMNS = [
 ]
 
 
-def export_inventory(workbook_path: Path, *, items: List[Dict[str, str]], attributes_map: Dict[int, List[Dict[str, str]]]) -> None:
-    """Write an XLSX workbook with inventory and attribute sheets."""
+def export_inventory(workbook_path: Path, *, items: List[Dict[str, str]]) -> None:
+    """Write an XLSX workbook with the current inventory."""
     workbook_path.parent.mkdir(parents=True, exist_ok=True)
     rows_inventory = _build_inventory_rows(items)
-    rows_attributes = _build_attribute_rows(attributes_map)
     with ZipFile(workbook_path, "w", ZIP_DEFLATED) as zf:
         _write_core_parts(zf)
         _write_inventory_sheet(zf, rows_inventory)
-        _write_attributes_sheet(zf, rows_attributes)
 
 
 def _build_inventory_rows(items: Iterable[Dict[str, str]]) -> List[List[str]]:
@@ -45,19 +43,6 @@ def _build_inventory_rows(items: Iterable[Dict[str, str]]) -> List[List[str]]:
     return rows
 
 
-def _build_attribute_rows(attributes_map: Dict[int, List[Dict[str, str]]]) -> List[List[str]]:
-    rows = [["Item ID", "Attribute", "Value", "Updated"]]
-    for item_id, attrs in attributes_map.items():
-        for attr in attrs:
-            rows.append([
-                str(item_id),
-                attr.get("attr_key", ""),
-                _format_value(attr.get("attr_value")),
-                _format_value(attr.get("updated_at_utc")),
-            ])
-    return rows
-
-
 def _write_core_parts(zf: ZipFile) -> None:
     zf.writestr("[Content_Types].xml", _CONTENT_TYPES)
     zf.writestr("_rels/.rels", _RELS)
@@ -68,10 +53,6 @@ def _write_core_parts(zf: ZipFile) -> None:
 
 def _write_inventory_sheet(zf: ZipFile, rows: List[List[str]]) -> None:
     zf.writestr("xl/worksheets/sheet1.xml", _build_sheet_xml(rows))
-
-
-def _write_attributes_sheet(zf: ZipFile, rows: List[List[str]]) -> None:
-    zf.writestr("xl/worksheets/sheet2.xml", _build_sheet_xml(rows))
 
 
 def _build_sheet_xml(rows: List[List[str]]) -> str:
@@ -121,7 +102,6 @@ _CONTENT_TYPES = """<?xml version="1.0" encoding="UTF-8"?>
     <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
     <Default Extension="xml" ContentType="application/xml"/>
     <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-    <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
     <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
     <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
 </Types>"""
@@ -135,15 +115,13 @@ _WORKBOOK = """<?xml version="1.0" encoding="UTF-8"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
     <sheets>
         <sheet name="Inventory" sheetId="1" r:id="rId1"/>
-        <sheet name="Attributes" sheetId="2" r:id="rId2"/>
     </sheets>
 </workbook>"""
 
 _WORKBOOK_RELS = """<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
     <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-    <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
-    <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+    <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>"""
 
 _STYLES = """<?xml version="1.0" encoding="UTF-8"?>

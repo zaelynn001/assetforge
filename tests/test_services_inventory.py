@@ -34,17 +34,13 @@ def test_export_inventory_generates_xlsx(tmp_path: Path) -> None:
 
         out_path = tmp_path / "inventory.xlsx"
         items = items_repo.list_items()
-        export_inventory(out_path, items=items, attributes_map={item["id"]: [] for item in items})
+        export_inventory(out_path, items=items)
 
         assert out_path.exists()
         with ZipFile(out_path) as zf:
             assert "xl/worksheets/sheet1.xml" in zf.namelist()
-            assert "xl/worksheets/sheet2.xml" in zf.namelist()
             sheet1 = zf.read("xl/worksheets/sheet1.xml").decode()
             assert "Laptop" in sheet1
-            sheet2 = zf.read("xl/worksheets/sheet2.xml").decode()
-            assert "Attribute" in sheet2
-            assert sheet2.count("<row") == 1
     finally:
         db.close()
 
@@ -61,8 +57,8 @@ def test_import_inventory_csv_creates_records(tmp_path: Path) -> None:
         csv_path = tmp_path / "import.csv"
         with csv_path.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.writer(fh)
-            writer.writerow(["name", "type", "location", "user", "group", "attr:cpu"])
-            writer.writerow(["Workstation", "PC", "HQ", "Pat", "IT", "Ryzen"])
+            writer.writerow(["name", "type", "location", "user", "group"])
+            writer.writerow(["Workstation", "PC", "HQ", "Pat", "IT"])
 
         created, notes = import_inventory_csv(
             csv_path,

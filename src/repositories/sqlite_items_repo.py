@@ -163,7 +163,6 @@ class SQLiteItemsRepository:
         user_id: Optional[int] = None,
         group_id: Optional[int] = None,
         notes: Optional[str] = None,
-        attributes: Optional[Dict[str, Optional[str]]] = None,
         note: Optional[str] = None,
     ) -> Dict[str, Any]:
         mac_norm = self._normalize_mac(mac_address)
@@ -447,9 +446,6 @@ class SQLiteItemsRepository:
 
     def history_for_item(self, item_id: int, *, limit: int = 50) -> List[Dict[str, Any]]:
         return self._updates.list_for_item(item_id, limit=limit)
-
-    def attributes_for_item(self, item_id: int) -> List[Dict[str, Any]]:
-        return []
 
     def archive(self, item_id: int, *, note: Optional[str] = None) -> bool:
         item = self.get(item_id)
