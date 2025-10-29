@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Database smoke tests covering migrations and triggers."""
 from __future__ import annotations
@@ -19,6 +19,8 @@ def test_run_migrations_seeds_reference_data(tmp_path: Path) -> None:
     try:
         applied = db.run_migrations(MIGRATIONS_DIR)
         assert "0001_init.sql" in applied
+        assert "0002_flatten_items.sql" in applied
+        assert "0003_items_constraints.sql" in applied
 
         codes = [
             row["code"]
@@ -50,7 +52,6 @@ def test_asset_tag_trigger_generates_expected_value(tmp_path: Path) -> None:
         )
 
         assert item["id"] == 1
-        assert item["master_id"] is not None
         assert item["asset_tag"] == "SDMM-PC-0001"
     finally:
         db.close()

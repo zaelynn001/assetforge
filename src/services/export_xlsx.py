@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Minimal XLSX export helpers for AssetForge."""
 from __future__ import annotations
@@ -14,10 +14,13 @@ INVENTORY_COLUMNS = [
     ("Name", "name"),
     ("Model", "model"),
     ("Type", "type_name"),
+    ("Extension", "extension"),
+    ("Sub Type", "sub_type_name"),
     ("Location", "location_name"),
     ("User", "user_name"),
     ("Group", "group_name"),
     ("MAC Address", "mac_address"),
+    ("IP Address", "ip_address"),
     ("Notes", "notes"),
     ("Updated", "updated_at_utc"),
 ]

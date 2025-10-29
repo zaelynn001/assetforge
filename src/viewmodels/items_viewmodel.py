@@ -1,25 +1,26 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Items ViewModel providing filtering and selection logic."""
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set
 
 from PySide6.QtCore import QObject, Signal
 
+from src.models.item_record import ItemRecord
 from src.repositories.sqlite_items_repo import SQLiteItemsRepository
 
 
 class ItemsViewModel(QObject):
     """Coordinates item listings between repositories and the UI."""
 
-    itemsChanged = Signal(list)          # Emits list of item dicts with display fields
+    itemsChanged = Signal(list)          # Emits list of ItemRecord instances
     selectedItemChanged = Signal(dict)   # Emits detailed item dict or {}
 
     def __init__(self, items_repo: SQLiteItemsRepository) -> None:
         super().__init__()
         self._repo = items_repo
-        self._items: List[Dict[str, Any]] = []
+        self._items: List[ItemRecord] = []
         self._filters: Dict[str, Set[int]] = {
             "type_ids": set(),
             "location_ids": set(),
@@ -32,7 +33,7 @@ class ItemsViewModel(QObject):
     # ---- data loading -------------------------------------------------
     def refresh(self) -> None:
         """Reload items with the current filters/search and notify listeners."""
-        self._items = self._repo.list_items(
+        self._items = self._repo.list_records(
             type_ids=self._filters["type_ids"],
             location_ids=self._filters["location_ids"],
             user_ids=self._filters["user_ids"],
@@ -96,15 +97,20 @@ class ItemsViewModel(QObject):
         if item_id is None:
             self.selectedItemChanged.emit({})
             return
-        details = self._repo.get_details(item_id)
-        if details:
-            self.selectedItemChanged.emit(details)
+        for record in self._items:
+            if record.id == int(item_id):
+                self.selectedItemChanged.emit(record.as_dict())
+                break
         else:
-            self.selectedItemChanged.emit({})
+            details = self._repo.get_details(item_id)
+            if details:
+                self.selectedItemChanged.emit(details)
+            else:
+                self.selectedItemChanged.emit({})
 
     # ---- accessors ----------------------------------------------------
     def items(self) -> List[Dict[str, Any]]:
-        return list(self._items)
+        return [record.as_dict() for record in self._items]
 
     def selected_item_id(self) -> Optional[int]:
         return self._selected_id

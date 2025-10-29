@@ -1,12 +1,14 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Items table widget showing inventory rows."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
+
+from src.models.item_record import ItemRecord
 
 
 class ItemsTable(QTableWidget):
@@ -19,7 +21,7 @@ class ItemsTable(QTableWidget):
         ("Name", "name"),
         ("Model", "model"),
         ("Type", "type_name"),
-        ("MAC", "mac_address"),
+        ("Sub Type", "sub_type_name"),
     )
 
     def __init__(self, parent=None) -> None:
@@ -36,26 +38,26 @@ class ItemsTable(QTableWidget):
 
         header: QHeaderView = self.horizontalHeader()
         header.setStretchLastSection(True)
-        resize_columns = {0, 2, 4}
+        resize_columns = {0, 2}
         for idx, _ in enumerate(self._COLUMNS):
             mode = QHeaderView.ResizeToContents if idx in resize_columns else QHeaderView.Stretch
             header.setSectionResizeMode(idx, mode)
 
         self.itemSelectionChanged.connect(self._emit_selection)
         self.itemDoubleClicked.connect(self._activate)
-        self._rows: List[Dict[str, str]] = []
+        self._rows: List[ItemRecord] = []
 
     # ------------------------------------------------------------------
-    def set_rows(self, rows: List[Dict[str, str]]) -> None:
+    def set_rows(self, rows: List[ItemRecord]) -> None:
         previous_id = self.current_item_id()
         self._rows = list(rows)
         self.setRowCount(len(self._rows))
-        for r, row in enumerate(self._rows):
-            display_row = dict(row)
+        for r, record in enumerate(self._rows):
             for c, (_, key) in enumerate(self._COLUMNS):
-                value = display_row.get(key) or ""
+                value = getattr(record, key, "")
+                value = "" if value is None else value
                 item = QTableWidgetItem(str(value))
-                item.setData(Qt.UserRole, row.get("id"))
+                item.setData(Qt.UserRole, record.id)
                 if c == 0:
                     item.setFont(item.font())
                     item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)

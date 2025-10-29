@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Dialog for selecting a new location for an item."""
 from __future__ import annotations

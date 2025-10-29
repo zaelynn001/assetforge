@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Logging setup helpers for AssetForge."""
 from __future__ import annotations

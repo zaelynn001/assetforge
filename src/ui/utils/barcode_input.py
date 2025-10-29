@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Utility helpers for barcode and scanner input detection."""
 from __future__ import annotations

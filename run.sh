@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 # assetforge launcher – robust mode (Rev 0.1.2)
 
 set -Eeuo pipefail
@@ -17,10 +17,12 @@ trap err ERR
 # ---------- options ----------
 DEBUG=0
 APP="main"   # or "app_launcher" if you prefer
+PORTABLE=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --debug) DEBUG=1; shift ;;
     --app)   APP="${2:-main}"; shift 2 ;;
+    --portable) PORTABLE=1; shift ;;
     *) echo "Unknown arg: $1" >&2; exit 2 ;;
   esac
 done
@@ -35,9 +37,32 @@ cd "$SCRIPT_DIR"
 [[ -d "src" ]] || { echo "src/ not found in $(pwd) — are you in the project root?" >&2; exit 3; }
 
 # ---------- logs ----------
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/assetforge"
+APP_NAME="assetforge"
+
+if [[ -f "$SCRIPT_DIR/.portable" ]]; then
+  PORTABLE=1
+fi
+
+if [[ "${ASSETFORGE_PORTABLE:-0}" == "1" ]]; then
+  PORTABLE=1
+fi
+
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+
+DEFAULT_DATA_DIR="$DATA_HOME/$APP_NAME"
+DEFAULT_STATE_DIR="$STATE_HOME/$APP_NAME"
+
+if [[ $PORTABLE -eq 1 ]]; then
+  DEFAULT_DATA_DIR="$SCRIPT_DIR/portable-data"
+  DEFAULT_STATE_DIR="$SCRIPT_DIR/portable-state"
+fi
+
+DATA_DIR="${ASSETFORGE_DATA_DIR:-$DEFAULT_DATA_DIR}"
+STATE_DIR="${ASSETFORGE_STATE_DIR:-$DEFAULT_STATE_DIR}"
 LOG_DIR="$STATE_DIR/logs"
-mkdir -p "$LOG_DIR"
+
+mkdir -p "$DATA_DIR" "$LOG_DIR"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="$LOG_DIR/run-$STAMP.log"
 
@@ -55,9 +80,8 @@ fi
 # ---------- environment ----------
 export PYTHONUNBUFFERED=1
 export PYTHONPATH="$SCRIPT_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
-
-# Ensure data dirs exist
-mkdir -p "data" "$STATE_DIR"
+export ASSETFORGE_DATA_DIR="$DATA_DIR"
+export ASSETFORGE_STATE_DIR="$STATE_DIR"
 
 # ---------- quick sanity checks ----------
 python -c "import sys; print('Python OK:', sys.version.split()[0])" 2>&1 | tee -a "$LOG_FILE"
@@ -89,4 +113,3 @@ if [[ $APP_EC -ne 0 ]]; then
 fi
 
 echo "✅ assetforge exited cleanly" | tee -a "$LOG_FILE"
-

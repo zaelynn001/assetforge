@@ -1,8 +1,15 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Quick integrity check for the AssetForge SQLite database."""
-from pathlib import Path
 import sqlite3
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.utils.paths import DB_PATH, ensure_runtime_dirs
 
 
 def verify(db_path: Path) -> bool:
@@ -15,7 +22,8 @@ def verify(db_path: Path) -> bool:
 
 
 if __name__ == "__main__":
-    db_file = Path(__file__).resolve().parents[1] / "data" / "inventory.db"
+    ensure_runtime_dirs()
+    db_file = DB_PATH
     if not db_file.exists():
         print(f"Database not found at {db_file}")
     else:

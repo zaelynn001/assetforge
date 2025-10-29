@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Dialog for assigning a user and/or group to an item."""
 from __future__ import annotations

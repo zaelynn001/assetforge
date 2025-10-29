@@ -1,17 +1,17 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Main window implementing the inventory workspace (Milestone M3)."""
 from __future__ import annotations
 
 import csv
-from datetime import datetime
-from pathlib import Path
 import datetime as dt
+from datetime import datetime
 import json
 import subprocess
+from pathlib import Path
 from typing import Any, Optional
 
-from PySide6.QtCore import Qt, QEvent
+from PySide6.QtCore import Qt, QEvent, QTimer
 from PySide6.QtGui import QAction, QGuiApplication
 from PySide6.QtWidgets import (
     QApplication,
@@ -30,12 +30,16 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.utils.paths import EXPORT_DIR
 from src.repositories.sqlite_items_repo import SQLiteItemsRepository
 from src.repositories.sqlite_types_repo import SQLiteTypesRepository
 from src.repositories.sqlite_locations_repo import SQLiteLocationsRepository
 from src.repositories.sqlite_users_repo import SQLiteUsersRepository
 from src.repositories.sqlite_groups_repo import SQLiteGroupsRepository
+from src.repositories.sqlite_sub_types_repo import SQLiteSubTypesRepository
+from src.repositories.sqlite_ip_addresses_repo import SQLiteIPAddressesRepository
 from src.viewmodels.items_viewmodel import ItemsViewModel
+from src.models.item_record import ItemRecord
 from src.viewmodels.filters_viewmodel import FiltersViewModel
 from src.ui.panels.filters_panel import FiltersPanel
 from src.ui.panels.items_table import ItemsTable
@@ -62,6 +66,8 @@ class MainWindow(QMainWindow):
         self._locations_repo = SQLiteLocationsRepository(database)
         self._users_repo = SQLiteUsersRepository(database)
         self._groups_repo = SQLiteGroupsRepository(database)
+        self._sub_types_repo = SQLiteSubTypesRepository(database)
+        self._ip_repo = SQLiteIPAddressesRepository(database)
 
         # view-models
         self._items_vm = ItemsViewModel(self._items_repo)
@@ -93,7 +99,16 @@ class MainWindow(QMainWindow):
         screen = QGuiApplication.primaryScreen()
         if screen:
             rect = screen.availableGeometry()
-            self.setGeometry(rect)
+            target_width = int(rect.width() * 0.8)
+            target_height = int(rect.height() * 0.8)
+            offset_x = rect.left() + int((rect.width() - target_width) / 2)
+            offset_y = rect.top() + int((rect.height() - target_height) / 2)
+            self.setGeometry(offset_x, offset_y, target_width, target_height)
+            self.setMinimumSize(int(rect.width() * 0.6), int(rect.height() * 0.6))
+            self.setMaximumSize(rect.size())
+        self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
+        self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.show()
 
     # ------------------------------------------------------------------
@@ -225,6 +240,10 @@ class MainWindow(QMainWindow):
         act_types.triggered.connect(self._on_manage_types)
         data_menu.addAction(act_types)
 
+        act_sub_types = QAction("Manage Sub Types…", self)
+        act_sub_types.triggered.connect(self._on_manage_sub_types)
+        data_menu.addAction(act_sub_types)
+
         act_about = QAction("About", self)
         act_about.triggered.connect(self._on_about)
         help_menu.addAction(act_about)
@@ -308,7 +327,7 @@ class MainWindow(QMainWindow):
         self._pending_select_tag = None
         self._items_vm.set_search(text)
 
-    def _on_items_loaded(self, items: list[dict]) -> None:
+    def _on_items_loaded(self, items: list[ItemRecord]) -> None:
         self._items_table.set_rows(items)
         if self._pending_select_id is not None:
             self._items_table.select_item(self._pending_select_id)
@@ -320,10 +339,10 @@ class MainWindow(QMainWindow):
                 self._items_table.select_item(current)
         if self._pending_select_tag:
             tag_upper = self._pending_select_tag
-            for row in items:
-                if str(row.get("asset_tag", "")).upper() == tag_upper:
-                    self._items_table.select_item(row["id"])
-                    self._items_vm.set_selected_item(row["id"])
+            for record in items:
+                if str(record.asset_tag or "").upper() == tag_upper:
+                    self._items_table.select_item(record.id)
+                    self._items_vm.set_selected_item(record.id)
                     break
             self._pending_select_tag = None
         self._update_edit_action()
@@ -350,6 +369,8 @@ class MainWindow(QMainWindow):
             locations=self._locations_repo.list_locations(order_by="name"),
             users=self._users_repo.list_users(order_by="name"),
             groups=self._groups_repo.list_groups(order_by="name"),
+            sub_types=self._sub_types_repo.list_sub_types(order_by="name"),
+            ip_addresses=self._available_ip_addresses(),
             parent=self,
         )
         if dialog.exec() == QDialog.Accepted:
@@ -378,6 +399,8 @@ class MainWindow(QMainWindow):
             locations=self._locations_repo.list_locations(order_by="name"),
             users=self._users_repo.list_users(order_by="name"),
             groups=self._groups_repo.list_groups(order_by="name"),
+            sub_types=self._sub_types_repo.list_sub_types(order_by="name"),
+            ip_addresses=self._available_ip_addresses(current.get("ip_address")),
             parent=self,
             item=current,
         )
@@ -460,6 +483,16 @@ class MainWindow(QMainWindow):
         self._items_vm.set_filters(**selected)
         self._items_vm.refresh()
 
+    def _available_ip_addresses(self, current: Optional[str] = None) -> list[str]:
+        return self._ip_repo.list_available(include=current)
+
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.WindowStateChange:
+            if self.isMinimized():
+                super().changeEvent(event)
+                return
+        super().changeEvent(event)
+
     # ------------------------------------------------------------------
     def _show_items_context_menu(self, item_id: Optional[int], global_pos) -> None:
         if item_id is None:
@@ -503,6 +536,7 @@ class MainWindow(QMainWindow):
         act_users = menu.addAction("Manage Users…")
         act_groups = menu.addAction("Manage Groups…")
         act_locations = menu.addAction("Manage Locations…")
+        act_sub_types = menu.addAction("Manage Sub Types…")
 
         chosen = menu.exec(global_pos)
         if chosen is None:
@@ -530,6 +564,8 @@ class MainWindow(QMainWindow):
             self._on_manage_groups()
         elif chosen is act_locations:
             self._on_manage_locations()
+        elif chosen is act_sub_types:
+            self._on_manage_sub_types()
 
     def _on_toggle_filters(self, checked: bool) -> None:
         self._splitter.widget(0).setVisible(checked)
@@ -594,7 +630,7 @@ class MainWindow(QMainWindow):
         history = self._items_repo.history_for_item(item_id, limit=100)
         payload = {"item": details, "history": history}
         default_name = f"{details.get('asset_tag', 'item')}_details.json"
-        default_path = (Path("exports") / default_name).resolve()
+        default_path = (EXPORT_DIR / default_name).resolve()
         filename, _ = QFileDialog.getSaveFileName(
             self,
             "Export Item Details",
@@ -718,7 +754,7 @@ class MainWindow(QMainWindow):
 
     def _on_export_inventory(self) -> None:
         default_name = f"inventory-{datetime.now().strftime('%Y%m%d-%H%M')}.xlsx"
-        default_path = str((Path("exports") / default_name).resolve())
+        default_path = str((EXPORT_DIR / default_name).resolve())
         path_str, _ = QFileDialog.getSaveFileName(
             self,
             "Export inventory",
@@ -753,6 +789,8 @@ class MainWindow(QMainWindow):
                 locations_repo=self._locations_repo,
                 users_repo=self._users_repo,
                 groups_repo=self._groups_repo,
+                ip_repo=self._ip_repo,
+                sub_types_repo=self._sub_types_repo,
                 items_repo=self._items_repo,
             )
         except InventoryImportError as exc:
@@ -825,7 +863,7 @@ class MainWindow(QMainWindow):
         QMessageBox.information(
             self,
             "About AssetForge",
-            "AssetForge Inventory Control\nRevision 1.0.0",
+            "AssetForge Inventory Control\nRevision 1.2.0 - Distro",
         )
 
     def _on_manage_groups(self) -> None:
@@ -878,6 +916,19 @@ class MainWindow(QMainWindow):
         )
         dialog.exec()
         self._refresh_filter_options()
+
+    def _on_manage_sub_types(self) -> None:
+        dialog = EntityManagerDialog(
+            title="Manage Sub Types",
+            fields=[{"key": "name", "label": "Name", "required": True}],
+            list_func=lambda: self._sub_types_repo.list_sub_types(order_by="name"),
+            create_func=lambda data: self._sub_types_repo.create(name=data["name"]),
+            update_func=lambda rid, data: self._sub_types_repo.update(rid, name=data["name"]),
+            delete_func=lambda rid: self._sub_types_repo.delete(rid),
+            display_func=lambda rec: rec.get("name", ""),
+            parent=self,
+        )
+        dialog.exec()
 
     # ------------------------------------------------------------------
     def eventFilter(self, obj, event):  # noqa: N802

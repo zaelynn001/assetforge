@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Panel showing summary details for the selected item."""
 from __future__ import annotations
@@ -19,6 +19,9 @@ class DetailsPanel(QWidget):
             ("model", "Model"),
             ("type_name", "Type"),
             ("mac_address", "MAC Address"),
+            ("ip_address", "IP Address"),
+            ("extension", "Extension"),
+            ("sub_type_name", "Sub Type"),
             ("location_name", "Location"),
             ("user_name", "Assigned User"),
             ("group_name", "Assigned Group"),

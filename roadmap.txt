@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 AssetForge Development Roadmap (Rev 0.0.1)
 
@@ -47,7 +47,7 @@ M7 — Export & Backup (Rev 0.9.0)
 - Implement Backup script using git commit/push.
 - Integrate “Backup Now” action into menu.
 
-M8 — Packaging & Install (Rev 1.0.0)
+M8 — Packaging & Install (Rev 1.2.0 - Distro)
 ------------------------------------
 - Build PyInstaller one-folder bundle.
 - Create .desktop launcher and install script.

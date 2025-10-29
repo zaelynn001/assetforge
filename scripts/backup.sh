@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 # Backup helper for AssetForge data/exports repositories.
 
 set -euo pipefail

@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Search parsing helpers for advanced query tokens."""
 from __future__ import annotations

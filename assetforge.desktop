@@ -1,6 +1,8 @@
 [Desktop Entry]
-Type = Application
-Name = AssetForge
-Exec = python3 -m src.main
-Icon = icons/assetforge.png
-
+Type=Application
+Name=AssetForge
+Comment=Launch the AssetForge inventory desktop client
+Exec=sh -c '"$(dirname "%k")/portable.sh"'
+Icon=icons/assetforge_taskbar.png
+Terminal=false
+Categories=Utility;Office;

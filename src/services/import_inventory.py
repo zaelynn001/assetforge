@@ -31,6 +31,8 @@ def import_inventory_csv(
     locations_repo,
     users_repo,
     groups_repo,
+    ip_repo,
+    sub_types_repo,
     items_repo,
 ) -> Tuple[int, List[str]]:
     """Import inventory rows from CSV, creating items."""
@@ -39,6 +41,8 @@ def import_inventory_csv(
         return 0, []
 
     type_lookup = _build_type_lookup(types_repo.list_types())
+    landline = types_repo.find_by_code("TP")
+    landline_type_id = int(landline["id"]) if landline else None
     notes: List[str] = []
     created = 0
 
@@ -58,32 +62,67 @@ def import_inventory_csv(
 
             model = row.get("model") or None
             mac = row.get("mac") or row.get("mac_address") or None
+            ip_address_raw = row.get("ip") or row.get("ip_address") or None
+            ip_address = None
+            if ip_address_raw:
+                stripped = ip_address_raw.strip()
+                if stripped.lower() not in {"none", ""}:
+                    ip_address = stripped
             location_name = row.get("location") or None
             user_name = row.get("user") or None
             group_name = row.get("group") or row.get("group_name") or None
+            sub_type_name = row.get("sub_type") or row.get("subtype") or None
             note_text = row.get("notes") or None
+            extension_raw = row.get("extension") or row.get("phone_extension") or None
 
             location_id = None
             if location_name:
                 location_id = locations_repo.ensure(location_name)["id"]
 
-            user_id = None
             if user_name:
-                user_id = users_repo.ensure(user_name)["id"]
+                raise InventoryImportError(
+                    "User column is not supported. Assign users manually after import."
+                )
 
-            group_id = None
             if group_name:
-                group_id = groups_repo.ensure(group_name)["id"]
+                raise InventoryImportError(
+                    "Group column is not supported. Assign groups manually after import."
+                )
+
+            sub_type_id = None
+            if sub_type_name:
+                sub_type = sub_types_repo.find_by_name(sub_type_name)
+                if not sub_type:
+                    raise InventoryImportError(
+                        f"Sub type '{sub_type_name}' is not recognized. Update the catalog first."
+                    )
+                sub_type_id = sub_type["id"]
+
+            extension_value = None
+            if landline_type_id is not None and type_id == landline_type_id:
+                extension_value = (extension_raw or "").strip() or None
+            else:
+                extension_value = None
+
+            if ip_address:
+                ip_record = ip_repo.find(ip_address)
+                if not ip_record:
+                    raise InventoryImportError(
+                        f"IP address '{ip_address}' is not available. Seed it first."
+                    )
 
             item = items_repo.create(
                 name=name,
                 type_id=type_id,
                 model=model,
                 mac_address=mac,
+                ip_address=ip_address,
                 location_id=location_id,
-                user_id=user_id,
-                group_id=group_id,
+                user_id=None,
+                group_id=None,
+                sub_type_id=sub_type_id,
                 notes=note_text,
+                extension=extension_value,
                 note="imported via CSV",
             )
 

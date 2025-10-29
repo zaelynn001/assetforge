@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Utility functions for presenting diff entries in history panel."""
 from __future__ import annotations

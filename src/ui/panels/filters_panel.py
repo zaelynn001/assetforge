@@ -1,4 +1,4 @@
-# Rev 1.0.0
+# Rev 1.2.0 - Distro
 
 """Filters sidebar with combo boxes for quick narrowing."""
 from __future__ import annotations

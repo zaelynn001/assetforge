@@ -21,6 +21,8 @@ assetforge/                     # project root (git repo)
 │   │   ├── db.py                # SQLite wrapper & migration runner
 │   │   ├── sqlite_items_repo.py
 │   │   ├── sqlite_types_repo.py
+│   │   ├── sqlite_sub_types_repo.py
+│   │   ├── sqlite_ip_addresses_repo.py
 │   │   └── sqlite_updates_repo.py
 │   ├── viewmodels/
 │   │   ├── __init__.py
